@@ -1,11 +1,7 @@
 import omni.ext
 import omni.ui as ui
 
-
-# Functions and vars are available to other extension as usual in python: `example.python_ext.some_public_function(x)`
-def some_public_function(x: int):
-    print("[siborg.create.boids] some_public_function was called with x: ", x)
-    return x ** x
+from . import core
 
 
 # Any class derived from `omni.ext.IExt` in top level module (defined in `python.modules` of `extension.toml`) will be
@@ -19,25 +15,37 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
 
         self._count = 0
 
-        self._window = ui.Window("My Window", width=300, height=300)
+        self._window = ui.Window("Boids", width=300, height=300)
         with self._window.frame:
             with ui.VStack():
-                label = ui.Label("")
-
+                label = ui.Label("boids")
+                self.Sim = core.Simulator()
 
                 def on_click():
-                    self._count += 1
-                    label.text = f"count: {self._count}"
+                    if self.Sim == None:
+                        self.Sim = core.Simulator()
+                    self.Sim._unregister()
+                    
+                    self.Sim.register_simulation()
 
-                def on_reset():
-                    self._count = 0
-                    label.text = "empty"
 
-                on_reset()
+                def make_points():
+                    self.Sim.create_geompoints()
 
                 with ui.HStack():
-                    ui.Button("Add", clicked_fn=on_click)
-                    ui.Button("Reset", clicked_fn=on_reset)
+                    ui.Button("make points", clicked_fn=make_points)
+                    ui.Button("start", clicked_fn=on_click)
 
     def on_shutdown(self):
         print("[siborg.create.boids] siborg create boids shutdown")
+
+        try: self.Sim._unregister()
+        except: pass 
+
+        try: self._on_update_sub.unsubscribe()
+        except: self._on_update_sub = None 
+
+        self.Sim._simulation_event = None
+
+        self._window = None
+        self.Sim = None
