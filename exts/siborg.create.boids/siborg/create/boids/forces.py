@@ -52,6 +52,24 @@ def alignment(idx, positions, velocities, alignment_distance):
 
     return m_i
 
+def obstacle(idx, obstacles, velocities, separation_distance):
+    ''' Obstacle avoidance force
+    '''
+    # Get valid neighbors
+    distances = np.linalg.norm(obstacles[idx] - obstacles, axis=1)
+    j = np.where( (distances < separation_distance) & (distances>0))[0]
+    if j.size == 0: return np.zeros(3)
+
+    # obstacle avoidance
+    sub =  obstacles[j] - obstacles[idx]
+    norm = np.linalg.norm(obstacles[j], axis=1)[:,np.newaxis]
+
+    div = np.divide(sub,norm)
+    com = (div)*500
+    o_i = np.sum(com, axis=0)
+
+    return o_i
+
 
 def eccentricity(idx, positions, velocities, eccentricity_distance):
     
@@ -114,13 +132,13 @@ def leadership(idx, positions, velocities, k_i, x_i, leaders, X, dt):
     return -1
 
 
-def compute_forces(idx, p, v, leaders, dt):
+def compute_forces(idx, p, v, leaders, obstacles, dt):
 
     X = 0.5
 
-    separation_distance = 5.0
+    separation_distance = 1.0
     alignment_distance = 10.0
-    cohesion_distance = 10.0
+    cohesion_distance = 20.0
     eccentricity_distance = 5.0
 
     min_speed = 5
@@ -128,39 +146,36 @@ def compute_forces(idx, p, v, leaders, dt):
 
     # Reset velocity if it is too high
     if np.linalg.norm(v[idx]) > max_speed:
-        # Clamp velocity to 10
+        # Clamp velocity
         v[idx] = v[idx] / np.linalg.norm(v[idx]) * max_speed
-    # If it is too low, make it go a minimum speed
-    elif np.linalg.norm(v[idx]) < min_speed:
-        if np.linalg.norm(v[idx]) == 0:
-            pass
-        elif np.linalg.norm(v[idx]) < 1:
-            v[idx] = (v[idx]+1) / np.linalg.norm(v[idx]) + min_speed
-        else:
-            v[idx] = v[idx] / np.linalg.norm(v[idx]) * min_speed
-
+   
     s_i = separation(idx, p, v, separation_distance)
     k_i = cohesion(idx, p, v, cohesion_distance)
     m_i = alignment(idx, p, v, alignment_distance)
     x_i = eccentricity(idx, p, v, eccentricity_distance)
     l_i = leadership(idx, p, v, k_i, x_i, leaders, X, dt)
 
+    # Obstacles (should include walls)
+    obstacles[idx] = p[idx] # Hack to make boid part of the obstacle list
+    o_i = obstacle(idx, obstacles, v, 5.0)
 
-    return s_i, k_i, m_i, l_i
+    return s_i, k_i, m_i, o_i, l_i
 
 
-def set_forces(idx, s_i, k_i, m_i, l_i):
+def set_forces(idx, s_i, k_i, m_i, o_i, l_i):
 
-    S,K,M = 0.2, 0.2, 0.2
+    S,K,M = 0.005, 0.9, 0.02
 
     # If a leader, apply the leadership force
     if l_i > 0:
-        force = (s_i * S) + (k_i * K) + (m_i * M)
-        force += force*l_i # Leader moves faster
+        force = (s_i * S) + (k_i * K) + (m_i * M) #+ o_i
+        # force += force*l_i # Leader moves faster
     else:
-        force = (s_i * S) + (k_i * K) + (m_i * M)
+        force = (s_i * S) + (k_i * K) + (m_i * M) #+ o_i
 
+
+    # force = o_i
     # Clamp the force
-    force = np.clip(force, -30, 30)
+    # force = np.clip(force, -100, 100)
 
     return force

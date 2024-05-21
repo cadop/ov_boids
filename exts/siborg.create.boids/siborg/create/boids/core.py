@@ -16,8 +16,10 @@ class Simulator():
         self.cohesion_distance = 1.0
         eccentricity_distance = 1.0
 
+        self.obstacles = random_points_on_box_surface(20, 20, 10, 20000)
+
         self.agent_point_prim = None
-        self.num_boids = 70
+        self.num_boids = 120
 
         self.reset_params()
 
@@ -27,32 +29,33 @@ class Simulator():
     def reset_params(self):
         self.boid_positions = []
         # Randomly set initial positions in 3d space
+        variable = 20
         for _ in range(    self.num_boids):
-
-            self.boid_positions.append(np.array([np.random.randint(-10, 10), 
-                                                   np.random.randint(-10, 10), 
-                                                   np.random.randint(-10, 10)],
-                                                   dtype=float)
-                                                   )
-            
-        self.boid_positions = np.array(self.boid_positions, dtype=float)+200
+            self.boid_positions.append(np.array([np.random.uniform(-variable, variable), 
+                                                np.random.uniform(-variable, variable), 
+                                                np.random.uniform(-variable, variable)],
+                                                dtype=float)
+                                                )
+                
+        self.boid_positions = np.array(self.boid_positions, dtype=float)+ 0
         # self.boid_positions = Vt.Vec3fArray.FromNumpy(np.asarray(self.boid_positions,dtype=float))
 
         self.boid_velocities = []
+        velocity_range = 10
         for _ in range(    self.num_boids):
-
-            self.boid_velocities.append(np.array([np.random.random()/10.0, 
-                                                   np.random.random()/10.0, 
-                                                   np.random.random()/10.0],
-                                                   dtype=float)
-                                                   )
+            self.boid_velocities.append(np.array([np.random.uniform(-velocity_range, velocity_range), 
+                                                np.random.uniform(-velocity_range, velocity_range), 
+                                                np.random.uniform(-velocity_range, velocity_range)],
+                                                dtype=float)
+                                                )
         self.boid_velocities = np.array(self.boid_velocities, dtype=float)
 
 
-        self.agents_radi = Vt.FloatArray.FromNumpy(np.array([1.0 for x in range(self.num_boids)],dtype=float))
+        self.agents_radi = Vt.FloatArray.FromNumpy(np.array([1 for x in range(self.num_boids)],dtype=float))
         self.forces = [[0,0,0] for _ in range(self.num_boids)]
         self.leaders = [0 for _ in range(self.num_boids)]
 
+        self.goal = np.array([20,50,0], dtype=float)
 
     def register_simulation(self):
         self._callbacks()
@@ -87,20 +90,22 @@ class Simulator():
         force = []
 
         for idx in range(self.num_boids):
-
-            s_i, k_i, m_i, l_i = forces.compute_forces(idx, 
+            # continue
+        
+            s_i, k_i, m_i, o_i, l_i = forces.compute_forces(idx, 
                                                self.boid_positions, 
                                                self.boid_velocities, 
                                                self.leaders,
+                                               self.obstacles,
                                                self._dt
                                                )
             
-
-            
+        
             force.append(forces.set_forces(idx, 
                                            s_i,
                                            k_i, 
-                                           m_i,  
+                                           m_i,
+                                           o_i,   
                                            l_i)
                                            )
 
@@ -108,6 +113,8 @@ class Simulator():
             self.leaders[idx] = l_i
 
         self.forces = force
+        # self.forces = forces2.boids_3d(self.boid_positions, self.boid_velocities, self.goal)
+        # self.forces = forces3.update_boids(self.boid_positions, self.boid_velocities, self.goal)
 
 
     def step(self, dt):
@@ -167,3 +174,51 @@ class Simulator():
         
         self.agent_point_prim.GetPointsAttr().Set(positions)
 
+
+
+def random_points_on_box_surface(length, width, height, num_points):
+    """
+    Generates random points on the surface of a box.
+
+    Parameters:
+    - length: The length of the box along the x-axis.
+    - width: The width of the box along the y-axis.
+    - height: The height of the box along the z-axis.
+    - num_points: The number of points to be distributed on the surface.
+
+    Returns:
+    - points: A numpy array of shape (num_points, 3) with the coordinates of the points.
+    """
+    points = []
+
+    for _ in range(num_points):
+        face = np.random.choice(['front', 'back', 'left', 'right', 'top', 'bottom'])
+        
+        if face == 'front':
+            x = np.random.uniform(-length, length)
+            y = np.random.uniform(-width, width)
+            z = 0
+        elif face == 'back':
+            x = np.random.uniform(-length, length)
+            y = np.random.uniform(-width, width)
+            z = height
+        elif face == 'left':
+            x = 0
+            y = np.random.uniform(-width, width)
+            z = np.random.uniform(-height, height)
+        elif face == 'right':
+            x = length
+            y = np.random.uniform(-width, width)
+            z = np.random.uniform(-height, height)
+        elif face == 'top':
+            x = np.random.uniform(-length, length)
+            y = 0
+            z = np.random.uniform(-height, height)
+        elif face == 'bottom':
+            x = np.random.uniform(-length, length)
+            y = width
+            z = np.random.uniform(-height, height)
+        
+        points.append([x, y, z])
+    
+    return np.array(points)
