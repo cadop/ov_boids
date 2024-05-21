@@ -137,8 +137,8 @@ def compute_forces(idx, p, v, leaders, obstacles, dt):
     X = 0.5
 
     separation_distance = 1.0
-    alignment_distance = 10.0
-    cohesion_distance = 20.0
+    alignment_distance = 2.0
+    cohesion_distance = 25.0
     eccentricity_distance = 5.0
 
     min_speed = 5
@@ -164,12 +164,12 @@ def compute_forces(idx, p, v, leaders, obstacles, dt):
 
 def set_forces(idx, s_i, k_i, m_i, o_i, l_i):
 
-    S,K,M = 0.005, 0.9, 0.02
+    S,K,M = 0.05, 0.95, 0.01
 
     # If a leader, apply the leadership force
     if l_i > 0:
         force = (s_i * S) + (k_i * K) + (m_i * M) #+ o_i
-        # force += force*l_i # Leader moves faster
+        force += force*l_i # Leader moves faster
     else:
         force = (s_i * S) + (k_i * K) + (m_i * M) #+ o_i
 
