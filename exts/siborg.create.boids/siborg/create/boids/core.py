@@ -19,6 +19,12 @@ class Simulator():
         self.agent_point_prim = None
         self.num_boids = 70
 
+        self.reset_params()
+
+        self._simulation_event = None
+
+
+    def reset_params(self):
         self.boid_positions = []
         # Randomly set initial positions in 3d space
         for _ in range(    self.num_boids):
@@ -29,15 +35,15 @@ class Simulator():
                                                    dtype=float)
                                                    )
             
-        self.boid_positions = np.array(self.boid_positions, dtype=float)+100
+        self.boid_positions = np.array(self.boid_positions, dtype=float)+200
         # self.boid_positions = Vt.Vec3fArray.FromNumpy(np.asarray(self.boid_positions,dtype=float))
 
         self.boid_velocities = []
         for _ in range(    self.num_boids):
 
-            self.boid_velocities.append(np.array([np.random.random()/3.0, 
-                                                   np.random.random()/3.0, 
-                                                   np.random.random()/3.0],
+            self.boid_velocities.append(np.array([np.random.random()/10.0, 
+                                                   np.random.random()/10.0, 
+                                                   np.random.random()/10.0],
                                                    dtype=float)
                                                    )
         self.boid_velocities = np.array(self.boid_velocities, dtype=float)
@@ -46,8 +52,6 @@ class Simulator():
         self.agents_radi = Vt.FloatArray.FromNumpy(np.array([1.0 for x in range(self.num_boids)],dtype=float))
         self.forces = [[0,0,0] for _ in range(self.num_boids)]
         self.leaders = [0 for _ in range(self.num_boids)]
-
-        self._simulation_event = None
 
 
     def register_simulation(self):
@@ -90,7 +94,9 @@ class Simulator():
                                                self.leaders,
                                                self._dt
                                                )
-                                               
+            
+
+            
             force.append(forces.set_forces(idx, 
                                            s_i,
                                            k_i, 

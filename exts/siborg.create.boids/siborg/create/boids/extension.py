@@ -3,7 +3,7 @@ import omni.ui as ui
 
 from . import core
 
-
+ 
 # Any class derived from `omni.ext.IExt` in top level module (defined in `python.modules` of `extension.toml`) will be
 # instantiated when extension gets enabled and `on_startup(ext_id)` will be called. Later when extension gets disabled
 # on_shutdown() is called.
@@ -28,6 +28,8 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
                     
                     self.Sim.register_simulation()
 
+                def reset():
+                    self.Sim.reset_params()
 
                 def make_points():
                     self.Sim.create_geompoints()
@@ -35,6 +37,7 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
                 with ui.HStack():
                     ui.Button("make points", clicked_fn=make_points)
                     ui.Button("start", clicked_fn=on_click)
+                    ui.Button("reset", clicked_fn=reset)
 
     def on_shutdown(self):
         print("[siborg.create.boids] siborg create boids shutdown")
