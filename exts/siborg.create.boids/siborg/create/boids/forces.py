@@ -1,16 +1,19 @@
 '''
 Hartman, Christopher, and Bedrich Benes. “Autonomous Boids.” 
-Computer Animation and Virtual Worlds, vol. 17, no. 3‐4, 2006, pp. 199–206, doi:10.1002/cav.123.
+Computer Animation and Virtual Worlds, vol. 17, no. 3-4, 2006, pp. 199-206, doi:10.1002/cav.123.
+
+Many things are not clear in the paper, so modifications may have been done. 
 '''
 
 import warp as wp
 import numpy as np
+
 def separation(idx, positions, velocities, separation_distance):
     ''' Separation force
     '''
     # Get valid neighbors
     distances = np.linalg.norm(positions[idx] - positions, axis=1)
-    j = np.where(distances < separation_distance)[0]
+    j = np.where( (distances < separation_distance) & (distances>0) )[0]
     if j.size == 0: return np.zeros(3)
 
     # Steerforce
@@ -23,12 +26,12 @@ def cohesion(idx, positions, velocities, cohesion_distance):
 
     # Get valid neighbors
     distances = np.linalg.norm(positions[idx] - positions, axis=1)
-    j = np.where(distances < cohesion_distance)[0]
+    j = np.where( (distances < cohesion_distance) & (distances>0))[0]
     if j.size == 0: return np.zeros(3)
     
     # Cohesion vector
-    V_i = positions[j] - positions[idx] # remove itself
-    c_i = np.sum(V_i/(V_i.size-1)) 
+    V_i = positions[j]
+    c_i = np.sum(V_i/( (V_i.size/3)), axis=0)
 
     # Cohesion vector
     k_i = c_i - positions[idx]
@@ -39,13 +42,13 @@ def alignment(idx, positions, velocities, alignment_distance):
 
     # Get valid neighbors
     distances = np.linalg.norm(velocities[idx] - velocities, axis=1)
-    j = np.where(distances < alignment_distance)[0]
+    j = np.where( (distances < alignment_distance) & (distances>0))[0]
     if j.size == 0: return np.zeros(3)
     
     # Alignment vector
-    V_i = velocities[j] - velocities[idx] # Remove itself
+    V_i = velocities[j]
 
-    m_i = np.sum(V_i/(V_i.size-1)) 
+    m_i = np.sum(V_i/( (V_i.size/3)))
 
     return m_i
 
@@ -56,13 +59,16 @@ def eccentricity(idx, positions, velocities, eccentricity_distance):
     e = eccentricity_distance
 
     distances = np.linalg.norm(positions[idx] - positions, axis=1)
-    j = np.where(distances < eccentricity_distance)[0]
-
-    if j.size == 0: return np.zeros(3)
+    j = np.where((distances < eccentricity_distance) & (distances>0))[0]
+    if j.size == 0: return 0
     
-    V_i = positions[j] - positions[idx] # Remove itself
+    V_i = positions[j] 
 
-    c_i = np.sum(V_i/(V_i.size-1))
+    # Center of density
+    c_i = np.sum(V_i/( ( (V_i.size/3) ) ), axis=0)
+
+    # Distance of boid to the center of density
+    c_i = np.linalg.norm(positions[idx] - c_i, axis=0)
 
     # The divisor e is the visibility range of the boid, so the
     # value xi is normalized xi ∈ (0, 1)
@@ -70,6 +76,7 @@ def eccentricity(idx, positions, velocities, eccentricity_distance):
     x_i = c_i/e
 
     return x_i
+
 
 def leadership(idx, positions, velocities, k_i, x_i, leaders, X, dt):
     ''' 
@@ -99,7 +106,7 @@ def leadership(idx, positions, velocities, k_i, x_i, leaders, X, dt):
         return -1
 
     # Trigger runaway
-    mu = 1.0/2.0
+    mu = 0.5
     gauss_rand = np.random.normal(mu)
     if (x_i >= X*gauss_rand): 
         return 1
@@ -111,10 +118,26 @@ def compute_forces(idx, p, v, leaders, dt):
 
     X = 0.5
 
-    separation_distance = 20.0
-    alignment_distance = 40.0
-    cohesion_distance = 40.0
-    eccentricity_distance = 20.0
+    separation_distance = 5.0
+    alignment_distance = 10.0
+    cohesion_distance = 10.0
+    eccentricity_distance = 5.0
+
+    min_speed = 5
+    max_speed = 30.0
+
+    # Reset velocity if it is too high
+    if np.linalg.norm(v[idx]) > max_speed:
+        # Clamp velocity to 10
+        v[idx] = v[idx] / np.linalg.norm(v[idx]) * max_speed
+    # If it is too low, make it go a minimum speed
+    elif np.linalg.norm(v[idx]) < min_speed:
+        if np.linalg.norm(v[idx]) == 0:
+            pass
+        elif np.linalg.norm(v[idx]) < 1:
+            v[idx] = (v[idx]+1) / np.linalg.norm(v[idx]) + min_speed
+        else:
+            v[idx] = v[idx] / np.linalg.norm(v[idx]) * min_speed
 
     s_i = separation(idx, p, v, separation_distance)
     k_i = cohesion(idx, p, v, cohesion_distance)
@@ -122,12 +145,13 @@ def compute_forces(idx, p, v, leaders, dt):
     x_i = eccentricity(idx, p, v, eccentricity_distance)
     l_i = leadership(idx, p, v, k_i, x_i, leaders, X, dt)
 
+
     return s_i, k_i, m_i, l_i
 
 
 def set_forces(idx, s_i, k_i, m_i, l_i):
 
-    S,K,M = 0.7, 0.8, 0.9
+    S,K,M = 0.2, 0.2, 0.2
 
     # If a leader, apply the leadership force
     if l_i > 0:
