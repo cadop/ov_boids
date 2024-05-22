@@ -35,9 +35,9 @@ class Simulator():
         # Randomly set initial positions in 3d space
         variable = 20
         for _ in range(    self.num_boids):
-            self.boid_positions.append(np.array([np.random.uniform(-variable, variable), 
-                                                np.random.uniform(-variable, variable), 
-                                                np.random.uniform(-variable, variable)],
+            self.boid_positions.append(np.array([np.random.uniform(-variable*3, variable), 
+                                                np.random.uniform(-variable/2, variable/2), 
+                                                np.random.uniform(-variable*3, variable)],
                                                 dtype=float)
                                                 )
                 

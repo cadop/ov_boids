@@ -136,8 +136,8 @@ def compute_forces(idx, p, v, leaders, obstacles, dt):
 
     X = 0.5
 
-    separation_distance = 2.0
-    alignment_distance = 2.0
+    separation_distance = 3.5
+    alignment_distance = 5.5
     cohesion_distance = 25.0
     eccentricity_distance = 5.0
 
@@ -164,7 +164,7 @@ def compute_forces(idx, p, v, leaders, obstacles, dt):
 
 def set_forces(idx, s_i, k_i, m_i, o_i, l_i):
 
-    S,K,M = 0.5, 0.95, 0.01
+    S,K,M = 0.7, 0.95, 0.01
 
     # If a leader, apply the leadership force
     if l_i > 0:
