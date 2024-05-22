@@ -7,6 +7,7 @@ import omni
 import carb
 
 from . import forces
+from . import usd_utils
 
 class Simulator():
     def __init__(self):
@@ -21,9 +22,12 @@ class Simulator():
         self.agent_point_prim = None
         self.num_boids = 120
 
+        self.instance_forward_vec = Gf.Vec3d(1,0,0)
         self.reset_params()
 
         self._simulation_event = None
+
+        # Set the forward vector for the boids
 
 
     def reset_params(self):
@@ -56,6 +60,8 @@ class Simulator():
         self.leaders = [0 for _ in range(self.num_boids)]
 
         self.goal = np.array([20,50,0], dtype=float)
+
+        self.boid_headings = []
 
     def register_simulation(self):
         self._callbacks()
@@ -113,8 +119,19 @@ class Simulator():
             self.leaders[idx] = l_i
 
         self.forces = force
-        # self.forces = forces2.boids_3d(self.boid_positions, self.boid_velocities, self.goal)
-        # self.forces = forces3.update_boids(self.boid_positions, self.boid_velocities, self.goal)
+
+
+    def set_heading(self, velocities):
+        # Only makes sense with instances and not geompoints
+        self.boid_headings = []
+        rot = Gf.Rotation()
+        for vel in velocities:
+            normalized_vel = vel / np.linalg.norm(vel)  # Normalize the velocity
+            tovec = Gf.Vec3d(tuple(normalized_vel))
+            rot.SetRotateInto(self.instance_forward_vec, tovec)
+            self.boid_headings.append(Gf.Quath(rot.GetQuat()))
+
+        self.boid_instancer.GetOrientationsAttr().Set(self.boid_headings)
 
 
     def step(self, dt):
@@ -131,6 +148,7 @@ class Simulator():
             self.boid_velocities[i] = v1
 
         self.set_positions(self.boid_positions)
+        self.set_heading(self.boid_velocities)
 
 
     def run(self):
@@ -168,11 +186,26 @@ class Simulator():
         color_primvar.Set([point_color])
         
         boid_positions = Vt.Vec3fArray.FromNumpy(np.asarray(self.boid_positions,dtype=float))
+
+        
+        ##### Create the instancer #####
+        self.boid_instancer = usd_utils.create_boids_instancer(instance_path="/World/Bird/PointInstancer", 
+                                                               agent_instance_path="/World/Bird/Agent", 
+                                                               nagents=self.num_boids, 
+                                                               pos=self.boid_positions, 
+                                                               radi=self.agents_radi, 
+                                                               radius_max=1, 
+                                                               forward_vec=self.instance_forward_vec)
+        
         self.set_positions(boid_positions)
+
 
     def set_positions(self, positions):
         
         self.agent_point_prim.GetPointsAttr().Set(positions)
+
+        # Set the instancer positions
+        self.boid_instancer.GetPositionsAttr().Set(positions)   
 
 
 
