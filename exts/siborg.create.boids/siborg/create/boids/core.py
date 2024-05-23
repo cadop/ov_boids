@@ -22,7 +22,7 @@ class Simulator():
         self.agent_point_prim = None
         self.num_boids = 120
 
-        self.instance_forward_vec = Gf.Vec3d(1,0,0)
+        self.instance_forward_vec = Gf.Vec3d(-1,0,0) 
         self.reset_params()
 
         self._simulation_event = None
