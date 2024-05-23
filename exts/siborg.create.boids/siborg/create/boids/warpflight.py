@@ -25,10 +25,10 @@ def get_forces(positions: wp.array(dtype=wp.vec3),
     l_i = leader[tid]
 
     # Separation distance
-    s_d  = 4.5   #4.5
-    c_d  = 50.5  #10.5
-    a_d = 10.5    #20.0
-    e_d = 35.0    #5.0
+    s_d  = 8.5   #4.5
+    c_d  = 80.5  #10.5
+    a_d = 25.5    #20.0
+    e_d = 45.0    #5.0
 
     _force, _l_i = compute_force(pi, vi, positions, velocities, s_d, c_d, a_d, e_d, dt, l_i, grid)
 
@@ -58,7 +58,7 @@ def integrate(x : wp.array(dtype=wp.vec3),
     vnew[tid] = v1
 
     # Limit velocity
-    max_speed = 45.0
+    max_speed = 80.0
     vnew[tid] = wp.normalize(v1) * wp.min(wp.length(v1), max_speed)
 
 
@@ -264,7 +264,7 @@ def leadership(v: wp.vec3,
     rg = wp.rand_init(1111)
     gauss_rand = wp.randf(rg)
     if (x_i >= X*gauss_rand): 
-        return 0.5
+        return 1.0
    
     return -1.0
 
@@ -306,7 +306,7 @@ def compute_force(p: wp.vec3,
     k_i = cohesion(p, pn, c_d, grid)
     m_i = alignment(p, vn, a_d, grid)
 
-    S,K,M,X = 0.3, 0.9, 0.1, 0.5
+    S,K,M,X = 0.2, 0.8, 0.05, 0.4
 
     x_i = eccentricity(p, pn, e_d, grid)
     l_i = leadership(v, k_i, x_i, l_i, X, dt)
@@ -316,12 +316,8 @@ def compute_force(p: wp.vec3,
     # If a leader, apply the leadership force
     if l_i > 0.0:
         f = (s_i * S) + (k_i * K) + (m_i * M) #+ o_i
-        f += f * l_i # Leader moves faster
+        f += f * (1.0+l_i) # Leader moves faster
     else:
         f = (s_i * S) + (k_i * K) + (m_i * M) #+ o_i
-
-    # Limit the force
-    max_speed = 50.0
-    # f = wp.normalize(f) * wp.min(wp.length(f), max_speed)
 
     return f, l_i

@@ -24,7 +24,7 @@ class Simulator():
         self.hash_radius = 1.0
 
         self.agent_point_prim = None
-        self.num_boids = 120
+        self.num_boids = 3020
 
         self.instance_forward_vec = Gf.Vec3d(1,0,0)
         self.reset_params()
@@ -37,11 +37,11 @@ class Simulator():
     def reset_params(self):
         self.boid_positions = []
         # Randomly set initial positions in 3d space
-        variable = 20
+        variable = 100
         for _ in range(    self.num_boids):
             self.boid_positions.append(np.array([np.random.uniform(-variable*3, variable), 
-                                                np.random.uniform(-variable/2, variable/2), 
-                                                np.random.uniform(-variable*2, variable)],
+                                                np.random.uniform(-variable/5, variable/5), 
+                                                np.random.uniform(-variable, variable)],
                                                 dtype=float)
                                                 )
                 
@@ -49,11 +49,11 @@ class Simulator():
         # self.boid_positions = Vt.Vec3fArray.FromNumpy(np.asarray(self.boid_positions,dtype=float))
 
         self.boid_velocities = []
-        velocity_range = 2
+        velocity_range = 14.5
         for _ in range(    self.num_boids):
-            self.boid_velocities.append(np.array([np.random.uniform(-velocity_range, velocity_range), 
-                                                np.random.uniform(-velocity_range, velocity_range), 
-                                                np.random.uniform(-velocity_range, velocity_range)],
+            self.boid_velocities.append(np.array([np.random.uniform(-velocity_range/100, velocity_range), 
+                                                np.random.uniform(-velocity_range/20.0, velocity_range/5.0), 
+                                                np.random.uniform(-velocity_range/50.0, velocity_range/50.0)],
                                                 dtype=float)
                                                 )
         self.boid_velocities = np.array(self.boid_velocities, dtype=float)
