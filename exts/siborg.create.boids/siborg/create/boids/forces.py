@@ -156,8 +156,9 @@ def compute_forces(idx, p, v, leaders, obstacles, dt):
     l_i = leadership(idx, p, v, k_i, x_i, leaders, X, dt)
 
     # Obstacles (should include walls)
-    obstacles[idx] = p[idx] # Hack to make boid part of the obstacle list
-    o_i = obstacle(idx, obstacles, v, 5.0)
+    # obstacles[idx] = p[idx] # Hack to make boid part of the obstacle list
+    # o_i = obstacle(idx, obstacles, v, 5.0)
+    o_i = np.zeros(3)
 
     return s_i, k_i, m_i, o_i, l_i
 

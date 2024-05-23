@@ -17,7 +17,7 @@ class Simulator():
         self.cohesion_distance = 1.0
         eccentricity_distance = 1.0
 
-        self.obstacles = random_points_on_box_surface(20, 20, 10, 20000)
+        self.obstacles = []
 
         self.agent_point_prim = None
         self.num_boids = 120
@@ -37,7 +37,7 @@ class Simulator():
         for _ in range(    self.num_boids):
             self.boid_positions.append(np.array([np.random.uniform(-variable*3, variable), 
                                                 np.random.uniform(-variable/2, variable/2), 
-                                                np.random.uniform(-variable*3, variable)],
+                                                np.random.uniform(-variable*2, variable)],
                                                 dtype=float)
                                                 )
                 
@@ -207,51 +207,3 @@ class Simulator():
         # Set the instancer positions
         self.boid_instancer.GetPositionsAttr().Set(positions)   
 
-
-
-def random_points_on_box_surface(length, width, height, num_points):
-    """
-    Generates random points on the surface of a box.
-
-    Parameters:
-    - length: The length of the box along the x-axis.
-    - width: The width of the box along the y-axis.
-    - height: The height of the box along the z-axis.
-    - num_points: The number of points to be distributed on the surface.
-
-    Returns:
-    - points: A numpy array of shape (num_points, 3) with the coordinates of the points.
-    """
-    points = []
-
-    for _ in range(num_points):
-        face = np.random.choice(['front', 'back', 'left', 'right', 'top', 'bottom'])
-        
-        if face == 'front':
-            x = np.random.uniform(-length, length)
-            y = np.random.uniform(-width, width)
-            z = 0
-        elif face == 'back':
-            x = np.random.uniform(-length, length)
-            y = np.random.uniform(-width, width)
-            z = height
-        elif face == 'left':
-            x = 0
-            y = np.random.uniform(-width, width)
-            z = np.random.uniform(-height, height)
-        elif face == 'right':
-            x = length
-            y = np.random.uniform(-width, width)
-            z = np.random.uniform(-height, height)
-        elif face == 'top':
-            x = np.random.uniform(-length, length)
-            y = 0
-            z = np.random.uniform(-height, height)
-        elif face == 'bottom':
-            x = np.random.uniform(-length, length)
-            y = width
-            z = np.random.uniform(-height, height)
-        
-        points.append([x, y, z])
-    
-    return np.array(points)
