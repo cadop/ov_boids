@@ -1,7 +1,8 @@
 import omni.ext
 import omni.ui as ui
 
-from . import core
+# from . import core
+from . import warpsim as core
 
  
 # Any class derived from `omni.ext.IExt` in top level module (defined in `python.modules` of `extension.toml`) will be
