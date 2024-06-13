@@ -61,11 +61,15 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
                     self.Sim.instancer_path = item
                     self.instancer_field.model.set_value(item)
 
+                def assign_points_path(event):
+                    item = event.mime_data
+                    self.Sim.instancer_path = item
+                    self.instancer_field.model.set_value(item)
 
                 with ui.HStack():
-                    ui.Button("make points", clicked_fn=make_points)
-                    ui.Button("start", clicked_fn=start)
-                    ui.Button("reset", clicked_fn=reset)
+                    ui.Button("Populate", clicked_fn=make_points)
+                    ui.Button("Start", clicked_fn=start)
+                    ui.Button("Reset", clicked_fn=reset)
                 with ui.HStack(height=30):
                     ui.Label("Boid Asset")
                     self.asset_field = ui.StringField(tooltip="asset")
@@ -75,7 +79,14 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
                     ui.Label("Instancer Parent")
                     self.instancer_field = ui.StringField(tooltip="instancer")
                     self.instancer_field.set_accept_drop_fn(lambda item: True)
+                    self.instancer_field.model.set_value(self.Sim.instancer_path)
                     self.instancer_field.set_drop_fn(assign_instancer_path)
+                with ui.HStack(height=30):
+                    ui.Label("Points Parent")
+                    self.points_field = ui.StringField(tooltip="points")
+                    self.points_field.set_accept_drop_fn(lambda item: True)
+                    self.points_field.model.set_value(self.Sim.points_path)
+                    self.points_field.set_drop_fn(assign_points_path)
 
     def on_shutdown(self):
         print("[siborg.create.boids] siborg create boids shutdown")

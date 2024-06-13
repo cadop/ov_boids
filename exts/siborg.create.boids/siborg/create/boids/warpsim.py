@@ -22,6 +22,7 @@ class Simulator():
 
         self.agent_path = '/World'
         self.instancer_path = '/World/Instancer'
+        self.points_path = '/World'
 
 
         # Should be somewhere between min and max perception radius
@@ -202,11 +203,12 @@ class Simulator():
         color : (r,g,b), optional
             if not set, will make color red, by default None
         '''
-        if stage_path: stage_loc = stage_path
-        else:          stage_loc = "/World/Points"
+        if stage_path: points_path = stage_path
+        elif self.points_path: points_path = self.points_path
+        else:          points_path = "/World/Points"
 
         self.stage = omni.usd.get_context().get_stage()
-        self.agent_point_prim = UsdGeom.Points.Define(self.stage, stage_loc)
+        self.agent_point_prim = UsdGeom.Points.Define(self.stage, points_path)
         self.agent_point_prim.CreatePointsAttr()
 
         width_attr = self.agent_point_prim.CreateWidthsAttr()
