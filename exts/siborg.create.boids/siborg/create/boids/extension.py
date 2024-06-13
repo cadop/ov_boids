@@ -88,6 +88,9 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
                     self.points_field.model.set_value(self.Sim.points_path)
                     self.points_field.set_drop_fn(assign_points_path)
 
+                #TODO Obstacles
+
+
     def on_shutdown(self):
         print("[siborg.create.boids] siborg create boids shutdown")
 
