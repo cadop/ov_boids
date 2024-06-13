@@ -77,23 +77,16 @@ class Simulator():
     def _set_warp_params(self):
 
         # Numpy arrays
-        # self.boid_positions = np.asarray(self.boid_positions)
-        # self.boid_velocities = np.asarray([np.array([0,0,0], dtype=float) for x in range(self.num_boids)])
+
         self.boid_headings = np.asarray([np.array([0,0,0,1], dtype=float) for x in range(self.num_boids)])
         self.force_list = np.asarray([np.array([0,0,0], dtype=float) for x in range(self.num_boids)])
-        # self.agents_radi = np.random.uniform(self.radius_min, self.radius_max, self.num_boids)
-        # self.agents_mass = [self.mass for x in range(self.num_boids)]
-        # self.agents_percept = np.asarray([self.perception_radius for x in range(self.num_boids)])
-        # self.agents_goal = np.asarray([np.array(self.goal, dtype=float) for x in range(self.num_boids)])
+
         # Initialize Warp Arrays
         self.agent_force_wp = wp.zeros(shape=self.num_boids,device=self.device, dtype=wp.vec3)
         self.boid_positions_wp = wp.array(self.boid_positions, device=self.device, dtype=wp.vec3)
         self.boid_velocities_wp = wp.array(self.boid_velocities, device=self.device, dtype=wp.vec3)
         self.agents_hdir_wp = wp.array(self.boid_headings, device=self.device, dtype=wp.vec4)
-        # self.agents_goal_wp = wp.array(self.agents_goal, device=self.device, dtype=wp.vec3)
-        # self.agents_radi_wp = wp.array(self.agents_radi, device=self.device, dtype=float)
-        # self.agents_mass_wp = wp.array(self.agents_mass, device=self.device, dtype=float)
-        # self.agents_percept_wp = wp.array(self.agents_percept, device=self.device, dtype=float)
+
         # Initialize temp Warp Arrays
         self.xnew_wp = wp.zeros_like(wp.array(self.boid_positions, device=self.device, dtype=wp.vec3))
         self.vnew_wp = wp.zeros_like(wp.array(self.boid_positions, device=self.device, dtype=wp.vec3))
