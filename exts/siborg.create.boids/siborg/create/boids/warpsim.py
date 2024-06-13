@@ -20,11 +20,15 @@ class Simulator():
         self.obstacles = []
         self.device = 'cuda:0'
 
+        self.agent_path = '/World'
+        self.instancer_path = '/World/Instancer'
+
+
         # Should be somewhere between min and max perception radius
         self.hash_radius = 1.0
 
         self.agent_point_prim = None
-        self.num_boids = 3020
+        self.num_boids = 10020
 
         self.instance_forward_vec = Gf.Vec3d(1,0,0)
         self.reset_params()
@@ -226,8 +230,8 @@ class Simulator():
 
         
         ##### Create the instancer #####
-        self.boid_instancer = usd_utils.create_boids_instancer(instance_path="/World/Bird/PointInstancer", 
-                                                               agent_instance_path="/World/Bird/Agent", 
+        self.boid_instancer = usd_utils.create_boids_instancer(instance_path=self.instancer_path+"/PointInstancer", 
+                                                               agent_instance_path=self.agent_path, 
                                                                nagents=self.num_boids, 
                                                                pos=self.boid_positions, 
                                                                radi=self.agents_radi, 

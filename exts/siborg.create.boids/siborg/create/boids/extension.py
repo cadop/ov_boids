@@ -20,20 +20,15 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
         self._count = 0
         self.stage = omni.usd.get_context().get_stage()
 
-        self._window = ui.Window("Boids", width=300, height=300)
+        self._window = ui.Window("Boids", width=300, height=200)
         with self._window.frame:
             with ui.VStack():
-                label = ui.Label("boids")
                 self.Sim = core.Simulator()
-
-                def add_boid():
-                    self.Sim.add_boid()
 
                 def start():
                     if self.Sim == None:
                         self.Sim = core.Simulator()
                     self.Sim._unregister()
-                    
                     self.Sim.register_simulation()
 
                 def reset():
@@ -42,34 +37,45 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
                 def make_points():
                     self.Sim.create_geompoints()
 
-                def accept_drops(event):
+                def assign_boid_path(event):
                     item = event.mime_data
                     # Check if its a prim, get its path
                     prim = self.stage.GetPrimAtPath(item)
                     if prim.IsValid():
+                        self.Sim.agent_path = item
                         self.asset_field.model.set_value(item)
                     elif item.endswith('.usd'):
-                        # This is external, add as a reference
                         # Get name of file using os and path
                         file_name = Path(item).stem
-
-                        ref_prim = self.stage.OverridePrim(f'{self.stage.GetDefaultPrim().GetPath()}/{file_name}')
+                        # This is external, add as a reference
+                        new_prim_name = f'{self.stage.GetDefaultPrim().GetPath()}/{file_name}'
+                        ref_prim = self.stage.OverridePrim(new_prim_name)
                         ref_prim.GetReferences().AddReference(item)             
-                        self.asset_field.model.set_value(f'{self.stage.GetDefaultPrim().GetPath()}/{file_name}')
+                        self.Sim.agent_path = new_prim_name
+                        self.asset_field.model.set_value(self.Sim.agent_path)
                     else:
                         self.asset_field.model.set_value('INVALID ITEM OR PATH')
                     
+                def assign_instancer_path(event):
+                    item = event.mime_data
+                    self.Sim.instancer_path = item
+                    self.instancer_field.model.set_value(item)
+
+
                 with ui.HStack():
-                    ui.Button("add boid", clicked_fn=add_boid)
                     ui.Button("make points", clicked_fn=make_points)
                     ui.Button("start", clicked_fn=start)
                     ui.Button("reset", clicked_fn=reset)
-                with ui.HStack():
+                with ui.HStack(height=30):
                     ui.Label("Boid Asset")
                     self.asset_field = ui.StringField(tooltip="asset")
                     self.asset_field.set_accept_drop_fn(lambda item: True)
-                    self.asset_field.set_drop_fn(accept_drops)
-
+                    self.asset_field.set_drop_fn(assign_boid_path)
+                with ui.HStack(height=30):
+                    ui.Label("Instancer Parent")
+                    self.instancer_field = ui.StringField(tooltip="instancer")
+                    self.instancer_field.set_accept_drop_fn(lambda item: True)
+                    self.instancer_field.set_drop_fn(assign_instancer_path)
 
     def on_shutdown(self):
         print("[siborg.create.boids] siborg create boids shutdown")
