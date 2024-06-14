@@ -1,3 +1,8 @@
+'''
+
+https://www.cgtrader.com/free-3d-models/animals/bird/game-ready-bird-collection
+'''
+
 import omni.ext
 import omni.ui as ui
 import carb

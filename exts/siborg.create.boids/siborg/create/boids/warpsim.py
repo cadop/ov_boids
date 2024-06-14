@@ -56,9 +56,9 @@ class Simulator():
         # Randomly set initial positions in 3d space
         variable = 100
         for _ in range(    self.num_boids):
-            self.boid_positions.append(np.array([np.random.uniform(-variable*3, variable), 
+            self.boid_positions.append(np.array([np.random.uniform(-variable*5, variable), 
                                                 np.random.uniform(-variable/5, variable/5), 
-                                                np.random.uniform(-variable, variable)],
+                                                np.random.uniform(-variable/10, variable/10)],
                                                 dtype=float)
                                                 )
                 
@@ -68,7 +68,7 @@ class Simulator():
         self.boid_velocities = []
         velocity_range = 14.5
         for _ in range(    self.num_boids):
-            self.boid_velocities.append(np.array([np.random.uniform(-velocity_range/100, velocity_range), 
+            self.boid_velocities.append(np.array([np.random.uniform(-velocity_range/100, velocity_range*10), 
                                                 np.random.uniform(-velocity_range/20.0, velocity_range/5.0), 
                                                 np.random.uniform(-velocity_range/50.0, velocity_range/50.0)],
                                                 dtype=float)
@@ -217,7 +217,7 @@ class Simulator():
         self.wp_params.K = self.K
         self.wp_params.M = self.M
         self.wp_params.X = self.X
-        
+
         # Get all agent forces
         self.get_forces()
         self.integrate()
