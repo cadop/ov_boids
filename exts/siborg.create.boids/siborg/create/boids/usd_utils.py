@@ -1,4 +1,4 @@
-from pxr import UsdGeom, Gf, Sdf, UsdShade
+from pxr import UsdGeom, Gf, Sdf, UsdShade, Usd
 import omni
 
 
@@ -11,6 +11,11 @@ def create_boids_instancer(instance_path,
                            forward_vec):  
     
     stage = omni.usd.get_context().get_stage()
+
+
+    prim = stage.GetPrimAtPath(agent_instance_path)
+    if not prim.IsValid():
+        return None
 
     point_instancer = UsdGeom.PointInstancer.Get(stage, instance_path)
     
@@ -34,5 +39,11 @@ def create_boids_instancer(instance_path,
     agent_headings =  [Gf.Quath(rot.GetQuat()) for x in range(nagents)] 
     point_instancer.GetOrientationsAttr().Set(agent_headings)
 
-    return point_instancer
 
+    # # Set start times
+    start_times = [0.0, 1.0, 2.0, 3.0]  # Example start times for each instance
+    # time_samples = Usd.TimeSamples(start_times)
+    # point_instancer.GetTimeSamplesAttribute("positions").Set(time_samples, pos)
+    # point_instancer.GetTimeSamplesAttribute("orientations").Set(time_samples, agent_headings)
+
+    return point_instancer

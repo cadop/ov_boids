@@ -5,6 +5,7 @@ from pxr import UsdGeom, Gf, Sdf, UsdShade, Vt
 from omni.physx import get_physx_interface
 import omni
 import carb
+import omni.timeline
 
 from . import warpflight
 from . import usd_utils
@@ -12,34 +13,45 @@ from . import usd_utils
 class Simulator():
     def __init__(self):
 
-        self.separation_distance = 1.0
-        self.alignment_distance = 1.0
-        self.cohesion_distance = 1.0
-        eccentricity_distance = 1.0
+        self.separation_distance = 8.5
+        self.alignment_distance = 25.5
+        self.cohesion_distance = 80.5
+        self.eccentricity_distance = 45.0
+
+        self.S = 0.2
+        self.K = 0.8
+        self.M = 0.05
+        self.X = 0.4
 
         self.obstacles = []
         self.device = 'cuda:0'
 
-        self.agent_path = '/World'
+        self.agent_path = None
         self.instancer_path = '/World/Instancer'
-        self.points_path = '/World'
+        self.points_path = '/World/Points'
 
 
         # Should be somewhere between min and max perception radius
         self.hash_radius = 1.0
 
         self.agent_point_prim = None
-        self.num_boids = 10020
+        self.num_boids = 100
 
         self.instance_forward_vec = Gf.Vec3d(1,0,0)
-        self.reset_params()
+        self.timeline_interface = omni.timeline.get_timeline_interface()
 
         self._simulation_event = None
 
+        self.reset_params()
         # Set the forward vector for the boids
 
 
     def reset_params(self):
+
+        # Stop the simulation playing to avoid changing array size during physics steps
+        self.timeline_interface.stop()
+
+
         self.boid_positions = []
         # Randomly set initial positions in 3d space
         variable = 100
@@ -78,7 +90,7 @@ class Simulator():
     def _set_warp_params(self):
 
         # Numpy arrays
-
+        
         self.boid_headings = np.asarray([np.array([0,0,0,1], dtype=float) for x in range(self.num_boids)])
         self.force_list = np.asarray([np.array([0,0,0], dtype=float) for x in range(self.num_boids)])
 
@@ -94,6 +106,18 @@ class Simulator():
         self.hdir_wp = wp.zeros_like(wp.array(self.boid_headings, device=self.device, dtype=wp.vec4))
 
         self.leader_wp = wp.zeros(shape=self.num_boids,device=self.device, dtype=float)
+
+        # Set parameters for warp struct
+        self.wp_params = warpflight.Params()
+        self.wp_params.s_d = self.separation_distance
+        self.wp_params.a_d = self.alignment_distance
+        self.wp_params.c_d = self.cohesion_distance
+        self.wp_params.e_d = self.eccentricity_distance
+        self.wp_params.S = self.S
+        self.wp_params.K = self.K
+        self.wp_params.M = self.M
+        self.wp_params.X = self.X
+
 
     def register_simulation(self):
         self._callbacks()
@@ -152,7 +176,7 @@ class Simulator():
         # launch kernel
         wp.launch(kernel=warpflight.get_forces,
                 dim=self.num_boids,
-                inputs=[self.boid_positions_wp, self.boid_velocities_wp, self._dt, self.grid.id],
+                inputs=[self.boid_positions_wp, self.boid_velocities_wp, self._dt, self.grid.id, self.wp_params],
                 outputs=[self.leader_wp, self.agent_force_wp],
                 device=self.device
                 )
@@ -160,6 +184,10 @@ class Simulator():
         self.force_list = self.agent_force_wp.numpy()
 
     def set_heading(self, velocities):
+
+        if self.boid_instancer is None:
+            return
+
         # Only makes sense with instances and not geompoints
         up = wp.vec3(0.0,1.0,0.0)
         forward = wp.vec3(1.0,0.0,0.0)
@@ -180,6 +208,16 @@ class Simulator():
     def step(self, dt):
         '''integrate forces to update positions and velocities of boids'''
 
+        # Set any of the new parameters
+        self.wp_params.s_d = self.separation_distance
+        self.wp_params.a_d = self.alignment_distance
+        self.wp_params.c_d = self.cohesion_distance
+        self.wp_params.e_d = self.eccentricity_distance
+        self.wp_params.S = self.S
+        self.wp_params.K = self.K
+        self.wp_params.M = self.M
+        self.wp_params.X = self.X
+        
         # Get all agent forces
         self.get_forces()
         self.integrate()
@@ -206,6 +244,10 @@ class Simulator():
         if stage_path: points_path = stage_path
         elif self.points_path: points_path = self.points_path
         else:          points_path = "/World/Points"
+
+        if self.agent_path is None:
+            return False
+
 
         self.stage = omni.usd.get_context().get_stage()
         self.agent_point_prim = UsdGeom.Points.Define(self.stage, points_path)
@@ -238,8 +280,10 @@ class Simulator():
 
     def set_positions(self, positions):
         
-        self.agent_point_prim.GetPointsAttr().Set(positions)
+        if self.agent_point_prim:
+            self.agent_point_prim.GetPointsAttr().Set(positions)
 
         # Set the instancer positions
-        self.boid_instancer.GetPositionsAttr().Set(positions)   
+        if self.boid_instancer:
+            self.boid_instancer.GetPositionsAttr().Set(positions)   
 

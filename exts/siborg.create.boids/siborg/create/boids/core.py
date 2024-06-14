@@ -12,25 +12,39 @@ from . import usd_utils
 class Simulator():
     def __init__(self):
 
-        self.separation_distance = 1.0
-        self.alignment_distance = 1.0
-        self.cohesion_distance = 1.0
-        eccentricity_distance = 1.0
+        self.separation_distance = 8.5
+        self.alignment_distance = 25.5
+        self.cohesion_distance = 80.5
+        self.eccentricity_distance = 45.0
+
+        self.S = 0.2
+        self.K = 0.8
+        self.M = 0.05
+        self.X = 0.4
+
 
         self.obstacles = []
 
+        self.agent_path = None
+        self.instancer_path = '/World/Instancer'
+        self.points_path = '/World/Points'
+
         self.agent_point_prim = None
-        self.num_boids = 120
+        self.num_boids = 100
 
         self.instance_forward_vec = Gf.Vec3d(-1,0,0) 
-        self.reset_params()
+        self.timeline_interface = omni.timeline.get_timeline_interface()
 
         self._simulation_event = None
+
+        self.reset_params()
 
         # Set the forward vector for the boids
 
 
     def reset_params(self):
+        self.timeline_interface.stop()
+
         self.boid_positions = []
         # Randomly set initial positions in 3d space
         variable = 20
@@ -123,6 +137,9 @@ class Simulator():
 
     def set_heading(self, velocities):
         # Only makes sense with instances and not geompoints
+        if self.boid_instancer is None:
+            return
+
         self.boid_headings = []
         rot = Gf.Rotation()
         for vel in velocities:
@@ -168,11 +185,17 @@ class Simulator():
         color : (r,g,b), optional
             if not set, will make color red, by default None
         '''
-        if stage_path: stage_loc = stage_path
-        else:          stage_loc = "/World/Points"
 
+        self.reset_params()
+        if stage_path: points_path = stage_path
+        elif self.points_path: points_path = self.points_path
+        else:          points_path = "/World/Points"
+
+        if self.agent_path is None:
+            return False
+        
         self.stage = omni.usd.get_context().get_stage()
-        self.agent_point_prim = UsdGeom.Points.Define(self.stage, stage_loc)
+        self.agent_point_prim = UsdGeom.Points.Define(self.stage, points_path)
         self.agent_point_prim.CreatePointsAttr()
 
         width_attr = self.agent_point_prim.CreateWidthsAttr()
@@ -189,8 +212,8 @@ class Simulator():
 
         
         ##### Create the instancer #####
-        self.boid_instancer = usd_utils.create_boids_instancer(instance_path="/World/Bird/PointInstancer", 
-                                                               agent_instance_path="/World/Bird/Agent", 
+        self.boid_instancer = usd_utils.create_boids_instancer(instance_path=self.instancer_path+"/PointInstancer", 
+                                                               agent_instance_path=self.agent_path, 
                                                                nagents=self.num_boids, 
                                                                pos=self.boid_positions, 
                                                                radi=self.agents_radi, 
@@ -202,8 +225,10 @@ class Simulator():
 
     def set_positions(self, positions):
         
-        self.agent_point_prim.GetPointsAttr().Set(positions)
+        if self.agent_point_prim:
+            self.agent_point_prim.GetPointsAttr().Set(positions)
 
         # Set the instancer positions
-        self.boid_instancer.GetPositionsAttr().Set(positions)   
+        if self.boid_instancer:
+            self.boid_instancer.GetPositionsAttr().Set(positions)   
 

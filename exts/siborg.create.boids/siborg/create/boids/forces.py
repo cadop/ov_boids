@@ -170,7 +170,7 @@ def set_forces(idx, s_i, k_i, m_i, o_i, l_i):
     # If a leader, apply the leadership force
     if l_i > 0:
         force = (s_i * S) + (k_i * K) + (m_i * M) #+ o_i
-        force += force*l_i # Leader moves faster
+        force += force* (1.0+l_i) # Leader moves faster
     else:
         force = (s_i * S) + (k_i * K) + (m_i * M) #+ o_i
 

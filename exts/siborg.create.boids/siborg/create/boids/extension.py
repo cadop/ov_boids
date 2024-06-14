@@ -20,7 +20,7 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
         self._count = 0
         self.stage = omni.usd.get_context().get_stage()
 
-        self._window = ui.Window("Boids", width=300, height=200)
+        self._window = ui.Window("Boids", width=400, height=400)
         with self._window.frame:
             with ui.VStack():
                 self.Sim = core.Simulator()
@@ -31,16 +31,27 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
                     self.Sim._unregister()
                     self.Sim.register_simulation()
 
-                def reset():
+                def reset(event=None, num_boids=None):
                     self.Sim.reset_params()
+                    if num_boids != None:
+                        self.Sim.num_boids = num_boids
+                    self.Sim.reset_params()
+
+                def update_num_boids(event=None, num_boids=None):
+                    reset(event, num_boids)
+                    make_points()
 
                 def make_points():
                     self.Sim.create_geompoints()
 
                 def assign_boid_path(event):
+                    print(f'event: {event.mime_data}')
+                    if event.mime_data == None or event.mime_data == '':
+                        return
                     item = event.mime_data
                     # Check if its a prim, get its path
-                    prim = self.stage.GetPrimAtPath(item)
+                    prim_path = Sdf.Path(item)
+                    prim = self.stage.GetPrimAtPath(prim_path)
                     if prim.IsValid():
                         self.Sim.agent_path = item
                         self.asset_field.model.set_value(item)
@@ -63,8 +74,8 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
 
                 def assign_points_path(event):
                     item = event.mime_data
-                    self.Sim.instancer_path = item
-                    self.instancer_field.model.set_value(item)
+                    self.Sim.points_path = item
+                    self.points_field.model.set_value(item)
 
                 with ui.HStack():
                     ui.Button("Populate", clicked_fn=make_points)
@@ -74,6 +85,7 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
                     ui.Label("Boid Asset")
                     self.asset_field = ui.StringField(tooltip="asset")
                     self.asset_field.set_accept_drop_fn(lambda item: True)
+                    self.asset_field.model.set_value(self.Sim.agent_path)
                     self.asset_field.set_drop_fn(assign_boid_path)
                 with ui.HStack(height=30):
                     ui.Label("Instancer Parent")
@@ -87,6 +99,66 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
                     self.points_field.set_accept_drop_fn(lambda item: True)
                     self.points_field.model.set_value(self.Sim.points_path)
                     self.points_field.set_drop_fn(assign_points_path)
+                with ui.HStack(height=30):
+                    ui.Label("Number of Boids")
+                    self.boids_field = ui.IntField(tooltip="boids")
+                    self.boids_field.model.set_value(self.Sim.num_boids)
+                    self.boids_field.model.add_value_changed_fn(lambda m : update_num_boids('num_boids', m.get_value_as_int()))
+
+                # Allow custom settings for boids algorthim
+                with ui.HStack(height=30):
+                    ui.Label("Distances")
+
+                    with ui.HStack(height=30):
+                        ui.Label("Separation")
+                        self.sep_field = ui.FloatDrag(tooltip="sep", min=0.1, max=200,step=0.1)
+                        self.sep_field.model.set_value(self.Sim.separation_distance)
+                        self.sep_field.model.add_value_changed_fn(lambda m : setattr(self.Sim, 'separation_distance', m.get_value_as_float()))
+
+                    with ui.HStack(height=30):
+                        ui.Label("Alignment")
+                        self.align_field = ui.FloatDrag(tooltip="align", min=0.1, max=200,step=0.1)
+                        self.align_field.model.set_value(self.Sim.alignment_distance)
+                        self.align_field.model.add_value_changed_fn(lambda m : setattr(self.Sim, 'alignment_distance', m.get_value_as_float()))
+
+                    with ui.HStack(height=30):
+                        ui.Label("Cohesion")
+                        self.coh_field = ui.FloatDrag(tooltip="coh", min=0.1, max=200,step=0.1)
+                        self.coh_field.model.set_value(self.Sim.cohesion_distance)
+                        self.coh_field.model.add_value_changed_fn(lambda m : setattr(self.Sim, 'cohesion_distance', m.get_value_as_float()))
+
+                    with ui.HStack(height=30):
+                        ui.Label("Eccentricity")
+                        self.ecc_field = ui.FloatDrag(tooltip="ecc", min=0.1, max=200,step=0.1)
+                        self.ecc_field.model.set_value(self.Sim.eccentricity_distance)
+                        self.ecc_field.model.add_value_changed_fn(lambda m : setattr(self.Sim, 'eccentricity_distance', m.get_value_as_float()))
+
+                with ui.HStack(height=30):
+                    ui.Label("Multipliers")
+
+                    with ui.HStack(height=30):
+                        ui.Label("S")
+                        self.s_field = ui.FloatDrag(tooltip="s", min=0.1, max=1,step=0.1)
+                        self.s_field.model.set_value(self.Sim.S)
+                        self.s_field.model.add_value_changed_fn(lambda m : setattr(self.Sim, 'S', m.get_value_as_float()))
+
+                    with ui.HStack(height=30):
+                        ui.Label("M")
+                        self.m_field = ui.FloatDrag(tooltip="m", min=0.1, max=1,step=0.1)
+                        self.m_field.model.set_value(self.Sim.M)
+                        self.m_field.model.add_value_changed_fn(lambda m : setattr(self.Sim, 'M', m.get_value_as_float()))
+
+                    with ui.HStack(height=30):
+                        ui.Label("K")
+                        self.k_field = ui.FloatDrag(tooltip="k", min=0.1, max=1,step=0.1)
+                        self.k_field.model.set_value(self.Sim.K)
+                        self.k_field.model.add_value_changed_fn(lambda m : setattr(self.Sim, 'K', m.get_value_as_float()))
+
+                    with ui.HStack(height=30):
+                        ui.Label("X")
+                        self.x_field = ui.FloatDrag(tooltip="x", min=0.1, max=1,step=0.1)
+                        self.x_field.model.set_value(self.Sim.X)
+                        self.x_field.model.add_value_changed_fn(lambda m : setattr(self.Sim, 'X', m.get_value_as_float()))
 
                 #TODO Obstacles
 
@@ -99,6 +171,11 @@ class SiborgCreateBoidsExtension(omni.ext.IExt):
 
         try: self._on_update_sub.unsubscribe()
         except: self._on_update_sub = None 
+
+        try: self.Sim.timeline_interface.release_timeline_interface()
+        except: self.Sim.timeline_interface = None
+
+
 
         self.Sim._simulation_event = None
 

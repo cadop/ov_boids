@@ -7,11 +7,23 @@ Many things are not clear in the paper, so modifications may have been done.
 
 import warp as wp
 
+@wp.struct
+class Params:
+    s_d: float  = 8.5   #4.5
+    c_d: float = 80.5  #10.5
+    a_d: float  = 25.5    #20.0
+    e_d: float = 45.0    #5.0
+    S: float = 0.2
+    K: float = 0.8
+    M: float = 0.05
+    X: float = 0.4
+
 @wp.kernel
 def get_forces(positions: wp.array(dtype=wp.vec3), 
                velocities: wp.array(dtype=wp.vec3),
                dt: float,
                grid : wp.uint64, 
+               params: Params,
                leader: wp.array(dtype=float),
                forces: wp.array(dtype=wp.vec3), 
                ):
@@ -19,18 +31,17 @@ def get_forces(positions: wp.array(dtype=wp.vec3),
     # thread index
     tid = wp.tid()
 
+    s_d, c_d, a_d, e_d = params.s_d, params.c_d, params.a_d, params.e_d
+    
     # Current boids position
     pi = positions[tid]
     vi = velocities[tid]
     l_i = leader[tid]
 
     # Separation distance
-    s_d  = 8.5   #4.5
-    c_d  = 80.5  #10.5
-    a_d = 25.5    #20.0
-    e_d = 45.0    #5.0
 
-    _force, _l_i = compute_force(pi, vi, positions, velocities, s_d, c_d, a_d, e_d, dt, l_i, grid)
+
+    _force, _l_i = compute_force(pi, vi, positions, velocities, s_d, c_d, a_d, e_d, dt, l_i, grid, params)
 
     # Update leader status
     leader[tid] = _l_i
@@ -300,13 +311,14 @@ def compute_force(p: wp.vec3,
                 dt: float,
                 l_i: float,
                 grid: wp.uint64,
+                params: Params,
                 ):
 
     s_i = separation(p, pn, s_d, grid)
     k_i = cohesion(p, pn, c_d, grid)
     m_i = alignment(p, vn, a_d, grid)
 
-    S,K,M,X = 0.2, 0.8, 0.05, 0.4
+    S,K,M,X = params.S, params.K, params.M, params.X
 
     x_i = eccentricity(p, pn, e_d, grid)
     l_i = leadership(v, k_i, x_i, l_i, X, dt)
