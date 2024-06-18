@@ -29,7 +29,7 @@ class Simulator():
         self.agent_path = None
         self.instancer_path = '/World/Instancer'
         self.points_path = '/World/Points'
-
+        self.boid_instancer = None
 
         # Should be somewhere between min and max perception radius
         self.hash_radius = 1.0
@@ -54,11 +54,11 @@ class Simulator():
 
         self.boid_positions = []
         # Randomly set initial positions in 3d space
-        variable = 100
+        variable = 300
         for _ in range(    self.num_boids):
-            self.boid_positions.append(np.array([np.random.uniform(-variable*5, variable), 
-                                                np.random.uniform(-variable/5, variable/5), 
-                                                np.random.uniform(-variable/10, variable/10)],
+            self.boid_positions.append(np.array([np.random.uniform(-variable, variable), 
+                                                np.random.uniform(-variable, variable), 
+                                                np.random.uniform(-variable, variable)],
                                                 dtype=float)
                                                 )
                 
@@ -66,11 +66,11 @@ class Simulator():
         # self.boid_positions = Vt.Vec3fArray.FromNumpy(np.asarray(self.boid_positions,dtype=float))
 
         self.boid_velocities = []
-        velocity_range = 14.5
+        velocity_range = 15
         for _ in range(    self.num_boids):
-            self.boid_velocities.append(np.array([np.random.uniform(-velocity_range/100, velocity_range*10), 
-                                                np.random.uniform(-velocity_range/20.0, velocity_range/5.0), 
-                                                np.random.uniform(-velocity_range/50.0, velocity_range/50.0)],
+            self.boid_velocities.append(np.array([np.random.uniform(-velocity_range/100, velocity_range*20), 
+                                                np.random.uniform(-velocity_range/50.0, velocity_range/50.0), 
+                                                np.random.uniform(-velocity_range/5.0, velocity_range/5.0)],
                                                 dtype=float)
                                                 )
         self.boid_velocities = np.array(self.boid_velocities, dtype=float)
@@ -245,8 +245,6 @@ class Simulator():
         elif self.points_path: points_path = self.points_path
         else:          points_path = "/World/Points"
 
-        if self.agent_path is None:
-            return False
 
 
         self.stage = omni.usd.get_context().get_stage()
@@ -265,6 +263,8 @@ class Simulator():
         
         boid_positions = Vt.Vec3fArray.FromNumpy(np.asarray(self.boid_positions,dtype=float))
 
+        if self.agent_path is None:
+            return False
         
         ##### Create the instancer #####
         self.boid_instancer = usd_utils.create_boids_instancer(instance_path=self.instancer_path+"/PointInstancer", 
